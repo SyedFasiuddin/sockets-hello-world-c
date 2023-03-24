@@ -7,6 +7,12 @@
 
 #define SOCKET_PATH "/tmp/socket-c-hello.socket"
 
+void log_err_die(const char * const s) {
+    fprintf(stderr, "Errno: %d\n", errno);
+    perror(s);
+    exit(EXIT_FAILURE);
+}
+
 void socket_file(void) {
     int fd;
     struct sockaddr_un sock_addr = {
@@ -14,31 +20,19 @@ void socket_file(void) {
     };
     strncpy(sock_addr.sun_path, SOCKET_PATH, sizeof(sock_addr.sun_path) - 1);
 
-    if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        fprintf(stderr, "Failed to create the socket due to: %d", errno);
-        perror("socket creation");
-        exit(EXIT_FAILURE);
-    }
+    if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+        log_err_die("Socket creation");
 
-    if(bind(fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1) {
-        fprintf(stderr, "Failed to bind the socket due to: %d", errno);
-        perror("bind");
-        exit(EXIT_FAILURE);
-    }
+    if(bind(fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1)
+        log_err_die("Bind");
 
-    if(listen(fd, 1) == -1) {
-        fprintf(stderr, "Failed to listen on socket due to: %d", errno);
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
+    if(listen(fd, 1) == -1)
+        log_err_die("Listen");
 
     struct sockaddr_un client_addr;
     socklen_t s = sizeof(client_addr);
-    if(accept(fd, (struct sockaddr *) &client_addr, &s) == -1) {
-        fprintf(stderr, "Failed during accepting connection due to: %d", errno);
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
+    if(accept(fd, (struct sockaddr *) &client_addr, &s) == -1)
+        log_err_die("Accept");
 
     printf("Path: %s\nFamily: %hhu\nLen: %d", client_addr.sun_path, client_addr.sun_family, client_addr.sun_len);
 }
