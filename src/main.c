@@ -13,36 +13,39 @@ void log_err_die(const char * const s) {
     exit(EXIT_FAILURE);
 }
 
-void socket_file(void) {
-    int fd;
-    struct sockaddr_un sock_addr = {
+void echo_server(void) {
+    int server_fd;
+    struct sockaddr_un server_addr = {
         .sun_family = AF_UNIX,
     };
-    strncpy(sock_addr.sun_path, SOCKET_PATH, sizeof(sock_addr.sun_path) - 1);
+    strncpy(server_addr.sun_path, SOCKET_PATH, sizeof(server_addr.sun_path) - 1);
 
-    if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+    if((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
         log_err_die("Socket creation");
 
-    if(bind(fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1)
+    if(bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
         log_err_die("Bind");
 
-    if(listen(fd, 1) == -1)
+    if(listen(server_fd, 1) == -1)
         log_err_die("Listen");
 
     int client_fd;
     struct sockaddr_un client_addr;
     socklen_t s = sizeof(client_addr);
-    if((client_fd = accept(fd, (struct sockaddr *) &client_addr, &s)) == -1)
+    if((client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &s)) == -1)
         log_err_die("Accept");
 
 #define RECV_BUFFER_LEN 100
     char buffer[RECV_BUFFER_LEN];
     int len = recv(client_fd, buffer, RECV_BUFFER_LEN, 0);
 
-    printf("Recieved %d bytes\nMsg: %s", len, buffer);
+    printf("Recieved %d bytes\nMsg: %s\n", len, buffer);
+
+    len = send(client_fd, buffer, len, 0);
+    printf("Sent %d bytes\n", len);
 }
 
 int main(int argc, char **argv) {
-    socket_file();
+    echo_server();
     return 0;
 }
