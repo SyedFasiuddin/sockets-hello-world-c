@@ -29,12 +29,17 @@ void socket_file(void) {
     if(listen(fd, 1) == -1)
         log_err_die("Listen");
 
+    int client_fd;
     struct sockaddr_un client_addr;
     socklen_t s = sizeof(client_addr);
-    if(accept(fd, (struct sockaddr *) &client_addr, &s) == -1)
+    if((client_fd = accept(fd, (struct sockaddr *) &client_addr, &s)) == -1)
         log_err_die("Accept");
 
-    printf("Path: %s\nFamily: %hhu\nLen: %d", client_addr.sun_path, client_addr.sun_family, client_addr.sun_len);
+#define RECV_BUFFER_LEN 100
+    char buffer[RECV_BUFFER_LEN];
+    int len = recv(client_fd, buffer, RECV_BUFFER_LEN, 0);
+
+    printf("Recieved %d bytes\nMsg: %s", len, buffer);
 }
 
 int main(int argc, char **argv) {
